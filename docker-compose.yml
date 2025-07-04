@@ -4,16 +4,16 @@ services:
   reservation-service:
     build: .
     depends_on:
-      postgres:
+      reservation-db:
         condition: service_healthy
       kafka:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/hoteldb
-      SPRING_DATASOURCE_USERNAME: hotelapp
+      SPRING_DATASOURCE_URL: jdbc:postgresql://reservation-db:5432/reservationdb
+      SPRING_DATASOURCE_USERNAME: reservationapp
       SPRING_DATASOURCE_PASSWORD: password
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
     ports:
       - "8082:8080"
@@ -21,6 +21,29 @@ services:
     command: ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006", "-jar", "app.jar"]
     networks:
       - hotel-network
+
+  reservation-db:
+    image: postgres:17-alpine
+    container_name: reservation-db
+    restart: always
+    environment:
+      POSTGRES_DB: reservationdb
+      POSTGRES_USER: reservationapp
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - reservation-db-data:/var/lib/postgresql/data
+    networks:
+      - hotel-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U reservationapp -d reservationdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  reservation-db-data:
 
 networks:
   hotel-network:
