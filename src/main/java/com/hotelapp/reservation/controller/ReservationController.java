@@ -60,9 +60,14 @@ public class ReservationController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteReservation(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteReservation(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Role") String role) {
+
         log.info("Deleting reservation with ID: {}", id);
-        reservationService.deleteReservation(id);
+        reservationService.deleteReservation(id, userId, role);
+
         return ResponseEntity.ok(ApiResponse.success(null, "Reservation deleted successfully"));
     }
 }

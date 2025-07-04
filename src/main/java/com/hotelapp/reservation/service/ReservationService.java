@@ -75,9 +75,21 @@ public class ReservationService {
         return reservationRepository.findById(id);
     }
 
-    public void deleteReservation(Long id) {
-        log.info("Deleting reservation with ID: {}", id);
+    public void deleteReservation(Long id, String userId, String role) {
+        Optional<Reservation> reservationOpt = reservationRepository.findById(id);
+
+        if (reservationOpt.isEmpty()) {
+            throw new IllegalArgumentException("Reservation not found with id: " + id);
+        }
+
+        Reservation reservation = reservationOpt.get();
+
+        if (!"ROLE_ADMIN".equals(role) && !reservation.getUserId().equals(userId)) {
+            throw new SecurityException("You are not authorized to delete this reservation.");
+        }
+
         reservationRepository.deleteById(id);
+        log.info("Reservation deleted. id={}, by user={}", id, userId);
     }
 
     public List<ReservationResponseDTO> getReservationsByUser(String userId) {
