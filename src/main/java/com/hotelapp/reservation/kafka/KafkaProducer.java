@@ -17,6 +17,14 @@ public class KafkaProducer {
 
     public void sendMessage(ReservationCreatedEvent event) {
         log.info("Sending Kafka event: {}", event);
-        kafkaTemplate.send("reservation-created-topic", event);
+
+        kafkaTemplate.send("reservation-created-topic", event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to send Kafka message. Will retry if configured. Reason: {}", ex.getMessage(), ex);
+                    } else {
+                        log.info("Message sent successfully: {}", result.getRecordMetadata().toString());
+                    }
+                });
     }
 }

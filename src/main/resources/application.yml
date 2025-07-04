@@ -20,9 +20,11 @@ spring:
   kafka:
     bootstrap-servers: localhost:29092
     producer:
+      retries: 3
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
+        retry-backoff-ms: 2000
         spring.json.add.type.headers: true
         spring.json.type.mapping: reservationEvent:com.hotelapp.reservation.event.ReservationCreatedEvent
     consumer:
