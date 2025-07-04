@@ -15,4 +15,12 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic reservationCreatedDeadLetterTopic() {
+        return TopicBuilder.name("dead_letter_topic")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
 }

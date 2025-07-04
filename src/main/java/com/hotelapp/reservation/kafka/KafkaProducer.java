@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class KafkaProducer {
 
+    private static final String MAIN_TOPIC = "reservation-created-topic";
+    private static final String DEAD_LETTER_TOPIC = "reservation-created-dead-letter";
+
     private final KafkaTemplate<String, ReservationCreatedEvent> kafkaTemplate;
 
     public KafkaProducer(KafkaTemplate<String, ReservationCreatedEvent> kafkaTemplate) {
@@ -18,12 +21,24 @@ public class KafkaProducer {
     public void sendMessage(ReservationCreatedEvent event) {
         log.info("Sending Kafka event: {}", event);
 
-        kafkaTemplate.send("reservation-created-topic", event)
+        kafkaTemplate.send(MAIN_TOPIC, event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        log.error("Failed to send Kafka message. Will retry if configured. Reason: {}", ex.getMessage(), ex);
+                        log.error("Kafka message failed after retries. Sending to DLQ. Reason: {}", ex.getMessage(), ex);
+                        sendToDeadLetterQueue(event);
                     } else {
                         log.info("Message sent successfully: {}", result.getRecordMetadata().toString());
+                    }
+                });
+    }
+
+    private void sendToDeadLetterQueue(ReservationCreatedEvent event) {
+        kafkaTemplate.send(DEAD_LETTER_TOPIC, event)
+                .whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to send to Dead Letter Queue. Manual intervention required. Reason: {}", ex.getMessage(), ex);
+                    } else {
+                        log.warn("Event sent to Dead Letter Queue successfully.");
                     }
                 });
     }
