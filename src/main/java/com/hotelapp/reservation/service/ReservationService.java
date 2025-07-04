@@ -2,19 +2,19 @@ package com.hotelapp.reservation.service;
 
 import com.hotelapp.reservation.dto.ReservationRequestDTO;
 import com.hotelapp.reservation.dto.ReservationResponseDTO;
+import com.hotelapp.reservation.event.ReservationCreatedEvent;
 import com.hotelapp.reservation.exception.ReservationConflictException;
+import com.hotelapp.reservation.kafka.KafkaProducer;
 import com.hotelapp.reservation.mapper.ReservationMapper;
 import com.hotelapp.reservation.model.Reservation;
 import com.hotelapp.reservation.repository.ReservationRepository;
-import com.hotelapp.reservation.event.ReservationCreatedEvent;
-import com.hotelapp.reservation.kafka.KafkaProducer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationService {
@@ -33,14 +33,12 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponseDTO createReservation(String userId, ReservationRequestDTO dto) {
-        List<Reservation> existingReservations = reservationRepository.
-                findByRoomIdAndCheckInDateLessThanEqualAndCheckOutDateGreaterThanEqual(
-                        dto.getRoomId(),
-                        dto.getCheckOutDate(),
-                        dto.getCheckInDate()
-                );
+        boolean hasConflict = !reservationRepository
+                .findByRoomIdAndCheckInDateLessThanEqualAndCheckOutDateGreaterThanEqual(
+                        dto.getRoomId(), dto.getCheckOutDate(), dto.getCheckInDate()
+                ).isEmpty();
 
-        if (!existingReservations.isEmpty()) {
+        if (hasConflict) {
             throw new ReservationConflictException("Bu oda seçilen tarihlerde zaten rezerve edilmiştir.");
         }
 
@@ -55,8 +53,10 @@ public class ReservationService {
         return reservationMapper.toResponseDTO(saved);
     }
 
-    public List<Reservation> getAllReservations() {
-        return reservationRepository.findAll();
+    public List<ReservationResponseDTO> getAllReservations() {
+        return reservationRepository.findAll().stream()
+                .map(reservationMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     public Optional<Reservation> getReservationById(Long id) {
@@ -67,7 +67,9 @@ public class ReservationService {
         reservationRepository.deleteById(id);
     }
 
-    public List<Reservation> getReservationsByUser(String userId) {
-        return reservationRepository.findByUserId(userId);
+    public List<ReservationResponseDTO> getReservationsByUser(String userId) {
+        return reservationRepository.findByUserId(userId).stream()
+                .map(reservationMapper::toResponseDTO)
+                .collect(Collectors.toList());
     }
 }
