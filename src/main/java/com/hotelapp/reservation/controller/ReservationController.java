@@ -6,12 +6,14 @@ import com.hotelapp.reservation.dto.ReservationResponseDTO;
 import com.hotelapp.reservation.mapper.ReservationMapper;
 import com.hotelapp.reservation.service.ReservationService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/reservations")
 public class ReservationController {
@@ -29,6 +31,7 @@ public class ReservationController {
             @RequestHeader("X-User-Id") String userId,
             @Valid @RequestBody ReservationRequestDTO dto) {
 
+        log.info("Received reservation request from user: {}", userId);
         ReservationResponseDTO reservation = reservationService.createReservation(userId, dto);
         return ResponseEntity.ok(ApiResponse.success(reservation, "Reservation created successfully"));
     }
@@ -38,6 +41,7 @@ public class ReservationController {
             @RequestHeader("X-User-Id") String userId,
             @RequestHeader("X-User-Role") String role) {
 
+        log.info("Fetching reservations for user: {}, role: {}", userId, role);
         List<ReservationResponseDTO> reservations = "ROLE_ADMIN".equals(role)
                 ? reservationService.getAllReservations()
                 : reservationService.getReservationsByUser(userId);
@@ -47,6 +51,7 @@ public class ReservationController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ReservationResponseDTO>> getReservationById(@PathVariable Long id) {
+        log.info("Getting reservation by ID: {}", id);
         return reservationService.getReservationById(id)
                 .map(reservationMapper::toResponseDTO)
                 .map(dto -> ResponseEntity.ok(ApiResponse.success(dto, "Reservation found")))
@@ -56,6 +61,7 @@ public class ReservationController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteReservation(@PathVariable Long id) {
+        log.info("Deleting reservation with ID: {}", id);
         reservationService.deleteReservation(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Reservation deleted successfully"));
     }
