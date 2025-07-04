@@ -1,6 +1,9 @@
 package com.hotelapp.reservation.service;
 
+import com.hotelapp.reservation.dto.ReservationRequestDTO;
+import com.hotelapp.reservation.dto.ReservationResponseDTO;
 import com.hotelapp.reservation.exception.ReservationConflictException;
+import com.hotelapp.reservation.mapper.ReservationMapper;
 import com.hotelapp.reservation.model.Reservation;
 import com.hotelapp.reservation.repository.ReservationRepository;
 import com.hotelapp.reservation.event.ReservationCreatedEvent;
@@ -18,31 +21,38 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final KafkaProducer kafkaProducer;
+    private final ReservationMapper reservationMapper;
 
-    public ReservationService(ReservationRepository reservationRepository, KafkaProducer kafkaProducer) {
+    public ReservationService(ReservationRepository reservationRepository,
+                              KafkaProducer kafkaProducer,
+                              ReservationMapper reservationMapper) {
         this.reservationRepository = reservationRepository;
         this.kafkaProducer = kafkaProducer;
+        this.reservationMapper = reservationMapper;
     }
 
     @Transactional
-    public Reservation createReservation(Reservation reservation) {
-        List<Reservation> existingReservations = reservationRepository.findByRoomIdAndCheckInDateLessThanEqualAndCheckOutDateGreaterThanEqual(
-                reservation.getRoomId(),
-                reservation.getCheckOutDate(),
-                reservation.getCheckInDate()
-        );
+    public ReservationResponseDTO createReservation(String userId, ReservationRequestDTO dto) {
+        List<Reservation> existingReservations = reservationRepository.
+                findByRoomIdAndCheckInDateLessThanEqualAndCheckOutDateGreaterThanEqual(
+                        dto.getRoomId(),
+                        dto.getCheckOutDate(),
+                        dto.getCheckInDate()
+                );
 
         if (!existingReservations.isEmpty()) {
             throw new ReservationConflictException("Bu oda seçilen tarihlerde zaten rezerve edilmiştir.");
         }
 
+        Reservation reservation = reservationMapper.toEntity(dto);
+        reservation.setUserId(userId);
         reservation.setCreatedAt(LocalDateTime.now());
-        Reservation savedReservation = reservationRepository.save(reservation);
 
-        // Kafka Event Gönder
-        kafkaProducer.sendMessage(new ReservationCreatedEvent(savedReservation));
+        Reservation saved = reservationRepository.save(reservation);
 
-        return savedReservation;
+        kafkaProducer.sendMessage(new ReservationCreatedEvent(saved));
+
+        return reservationMapper.toResponseDTO(saved);
     }
 
     public List<Reservation> getAllReservations() {

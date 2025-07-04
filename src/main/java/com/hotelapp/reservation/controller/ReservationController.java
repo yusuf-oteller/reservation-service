@@ -1,7 +1,10 @@
 package com.hotelapp.reservation.controller;
 
+import com.hotelapp.reservation.dto.ReservationRequestDTO;
+import com.hotelapp.reservation.dto.ReservationResponseDTO;
 import com.hotelapp.reservation.model.Reservation;
 import com.hotelapp.reservation.service.ReservationService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +22,15 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<Reservation> createReservation(
+    public ResponseEntity<ReservationResponseDTO> createReservation(
             @RequestHeader("X-User-Id") String userId,
-            @RequestBody Reservation reservation) {
+            @Valid @RequestBody ReservationRequestDTO requestDTO) {
 
-        reservation.setUserId(userId);
-        return ResponseEntity.ok(reservationService.createReservation(reservation));
+        requestDTO.setGuestName(requestDTO.getGuestName().trim()); // örnek sanitize
+        ReservationResponseDTO response = reservationService.createReservation(userId, requestDTO);
+        return ResponseEntity.ok(response);
     }
+
 
     @GetMapping
     public ResponseEntity<List<Reservation>> getUserReservations(
