@@ -1,5 +1,6 @@
 package com.hotelapp.reservation.dto;
 
+import com.hotelapp.reservation.model.ReservationStatus;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -19,5 +20,6 @@ public class ReservationResponseDTO {
     private String userId;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
+    private ReservationStatus status;
     private LocalDateTime createdAt;
 }

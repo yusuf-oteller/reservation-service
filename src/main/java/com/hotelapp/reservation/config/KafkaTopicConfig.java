@@ -23,4 +23,20 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic paymentResultTopic() {
+        return TopicBuilder.name("payment-result-topic")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentResultDeadLetterTopic() {
+        return TopicBuilder.name("payment-result-dead-letter")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
 }

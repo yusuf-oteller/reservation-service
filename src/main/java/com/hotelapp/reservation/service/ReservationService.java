@@ -4,7 +4,9 @@ import com.hotelapp.reservation.dto.ReservationRequestDTO;
 import com.hotelapp.reservation.dto.ReservationResponseDTO;
 import com.hotelapp.reservation.exception.ReservationConflictException;
 import com.hotelapp.reservation.mapper.ReservationMapper;
+import com.hotelapp.reservation.model.PaymentStatus;
 import com.hotelapp.reservation.model.Reservation;
+import com.hotelapp.reservation.model.ReservationStatus;
 import com.hotelapp.reservation.repository.ReservationRepository;
 import com.hotelapp.reservation.event.ReservationCreatedEvent;
 import com.hotelapp.reservation.kafka.KafkaProducer;
@@ -98,5 +100,20 @@ public class ReservationService {
                 .stream()
                 .map(reservationMapper::toResponseDTO)
                 .collect(toList());
+    }
+
+    @Transactional
+    public void updateStatusByPaymentResult(Long reservationId, PaymentStatus status) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalStateException("Reservation not found with id: " + reservationId));
+
+        if (status == PaymentStatus.SUCCESS) {
+            reservation.setStatus(ReservationStatus.CONFIRMED);
+        } else {
+            reservation.setStatus(ReservationStatus.FAILED_PAYMENT);
+        }
+
+        reservationRepository.save(reservation);
+        log.info("Reservation [{}] updated to status [{}] due to payment result", reservationId, reservation.getStatus());
     }
 }
