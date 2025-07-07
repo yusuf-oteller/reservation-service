@@ -24,9 +24,11 @@ public class ReservationMapper {
                 .hotelId(reservation.getHotelId())
                 .roomId(reservation.getRoomId())
                 .guestName(reservation.getGuestName())
+                .userId(reservation.getUserId())
                 .checkInDate(reservation.getCheckInDate())
                 .checkOutDate(reservation.getCheckOutDate())
                 .createdAt(reservation.getCreatedAt())
+                .status(reservation.getStatus())
                 .build();
     }
 }
