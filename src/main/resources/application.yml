@@ -44,6 +44,14 @@ spring:
 server:
   port: 8082
 
+springdoc:
+  api-docs:
+    enabled: true
+    path: /docs/reservations/v3/api-docs
+  swagger-ui:
+    enabled: false
+    path: /docs/reservations/swagger-ui.html
+
 logging:
   level:
     root: INFO
